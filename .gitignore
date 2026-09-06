@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+
+# headless render output from the test scripts
+test/out-*.png
+test/p-*.png
+test/v-*.png
+test/montage.png
+test/vary.png
+test/ui.png
