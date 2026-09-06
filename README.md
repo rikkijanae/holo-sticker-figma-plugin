@@ -5,7 +5,7 @@ sequin flakes, the die-cut white edge, the silver and blue flashes between the
 colours. The effect is rendered in WebGL on the exported pixels (not vector),
 then dropped back into your file as an image layer.
 
-![The four presets on a test sheet](assets/presets.png)
+![A sheet of stickers made with the plugin — rainbow, smiley, flower pot, WOW, UFO, pencil, starburst](assets/hero.png)
 
 The flakes take their colour from the artwork underneath them, so a pink
 sticker stays pink and a black one stays black. The flash flakes between them
@@ -98,8 +98,8 @@ Rendered output lands in `test/` as `p-*.png` / `v-*.png` (gitignored).
 
 - `FRAG_SDF` — distance-to-nearest-opaque-pixel, computed at quarter res with a
   coarse ring search plus a local refine. Drives the die-cut border and the shadow.
-- `FRAG_COMPOSITE` — the actual effect. `flakes()` scatters metallic discs on a
-  jittered grid (two layers at different sizes), `foil()` is domain-warped fbm,
+- `FRAG_COMPOSITE` — the actual effect. `flakes()` lays overlapping metallic discs on a
+  jittered grid (one layer for the confetti presets, two for Glitter), `foil()` is domain-warped fbm,
   `pal()` is the cosine spectrum, and `layFlake()` is the blend that keeps the
   artwork readable while the flakes still read as metal.
 
