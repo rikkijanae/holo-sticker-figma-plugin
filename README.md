@@ -9,11 +9,7 @@ then dropped back into your file as an image layer.
 
 The flakes take their colour from the artwork underneath them, so a pink
 sticker stays pink and a black one stays black. The flash flakes between them
-are yours to colour:
-
-![The same pink smiley with six different holo palettes](assets/holo-colours.png)
-
-<img src="assets/panel.png" width="370" alt="The plugin panel">
+are yours to colour.
 
 ## Install
 
