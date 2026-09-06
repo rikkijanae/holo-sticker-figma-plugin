@@ -1,0 +1,20 @@
+<meta charset="utf-8"><body style="margin:0;background:#888">
+<script src="../src/holo.js"></script>
+<script>
+window.runHolo = async function(dataUrl, overrides, exportScale){
+  const bmp = await createImageBitmap(await (await fetch(dataUrl)).blob());
+  const c = document.createElement('canvas');
+  const r = new HoloRenderer(c);
+  r.setSource(bmp);
+  const o = Object.assign({
+    mode:0, seed:7.31, intensity:1.15, tint:1.0, holoMix:0.25, flakeScale:1.0, spread:1.0, jitter:0.42, vary:0.08, cover:1.0, sparkle:0.5, colorVary:0.55, holoAuto:false, holoLift:1.15,
+    holoPal:[[0.925,0.918,0.961],[0.5,0.85,1.0],[0.62,1.0,0.7]],
+    angle:35, gloss:0.55, border:true, borderW:7, borderHolo:0.35,
+    shadow:true, shadowBlur:8, shadowOpacity:0.28, shadowX:0, shadowY:4,
+    pad:24, exportScale:exportScale||3
+  }, overrides||{});
+  const res = r.render(o, 1);
+  const url = c.toDataURL('image/png');
+  return { url, w:res.width, h:res.height, pad:res.padOut };
+};
+</script></body>

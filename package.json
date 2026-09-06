@@ -1,0 +1,16 @@
+{
+  "name": "holo-sticker-figma-plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin that turns any layer into a 90s/00s holographic sequin sticker — rendered in WebGL, dropped back in as an image.",
+  "author": "Rikki Janae",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "test": "node test/run2.js test/sheet.png && node test/ui-run.js",
+    "test:perf": "node test/perf.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}
