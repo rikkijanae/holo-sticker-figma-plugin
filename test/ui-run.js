@@ -4,10 +4,13 @@ const fs = require('fs');
   const browser = await chromium.launch({
     args: ['--use-gl=swiftshader','--enable-unsafe-swiftshader']
   });
-  const page = await browser.newPage({ viewport: { width: 360, height: 720 } });
+  const page = await browser.newPage({ viewport: { width: 370, height: 740 } });
   const errs = [], sent = [];
   page.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-  page.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE: ' + m.text()); });
+  page.on('console', m => {
+    // Google Fonts can't be fetched from a sandboxed test runner — not a plugin error
+    if (m.type() === 'error' && !/ERR_TUNNEL|ERR_NAME_NOT_RESOLVED|fonts\.g/.test(m.text())) errs.push('CONSOLE: ' + m.text());
+  });
   await page.exposeFunction('__toHost', (m) => { sent.push(m); });
 
   // Stub the Figma host before ui.html's scripts run.

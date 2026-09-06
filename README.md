@@ -13,6 +13,8 @@ are yours to colour:
 
 ![The same pink smiley with six different holo palettes](assets/holo-colours.png)
 
+<img src="assets/panel.png" width="370" alt="The plugin panel">
+
 ## Install
 
 1. Download or clone this repo.

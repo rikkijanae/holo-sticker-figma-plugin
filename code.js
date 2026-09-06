@@ -2,7 +2,7 @@
 // Exports the selection to PNG, hands the pixels to the UI (which does the
 // WebGL work), then puts the processed result back in as an image node.
 
-figma.showUI(__html__, { width: 360, height: 720, themeColors: true, title: 'Holo Sticker' });
+figma.showUI(__html__, { width: 370, height: 740, title: 'Holo Sticker by Rikki Janae' });
 
 var MAX_IMAGE_DIM = 4096; // Figma's hard limit for createImage()
 var PREVIEW_MAX = 640;    // preview exports are capped to this many px
@@ -136,7 +136,7 @@ figma.ui.onmessage = async function (msg) {
   }
 
   if (msg.type === 'resize') {
-    figma.ui.resize(360, Math.max(420, Math.min(1000, Math.round(msg.height))));
+    figma.ui.resize(370, Math.max(420, Math.min(1000, Math.round(msg.height))));
     return;
   }
 

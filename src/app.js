@@ -86,6 +86,9 @@ function slider(host, [key, label, min, max, step]) {
   const sync = () => {
     input.value = S[key];
     val.textContent = step >= 1 ? Math.round(S[key]) : (+S[key]).toFixed(2).replace(/0$/, '');
+    const pct = ((S[key] - min) / (max - min)) * 100;
+    input.style.background =
+      'linear-gradient(90deg, var(--fg) 0%, var(--fg) ' + pct + '%, var(--track) ' + pct + '%, var(--track) 100%)';
   };
   input.addEventListener('input', () => { S[key] = parseFloat(input.value); sync(); schedule(); });
   sync();

@@ -7,6 +7,6 @@
   "editorType": ["figma", "figjam"],
   "documentAccess": "dynamic-page",
   "networkAccess": {
-    "allowedDomains": ["none"]
+    "allowedDomains": ["https://fonts.googleapis.com", "https://fonts.gstatic.com"]
   }
 }
