@@ -1,4 +1,4 @@
-# Holo Sticker — a Figma plugin by Rikki Janae
+# Shiny Sticker — a Figma plugin by Rikki Janae
 
 Turns any selected layer into a 90s/00s holographic sticker — the overlapping
 sequin flakes, the die-cut white edge, the silver and blue flashes between the
@@ -16,7 +16,7 @@ are yours to colour.
 1. Download or clone this repo.
 2. Figma **desktop app** → menu → **Plugins → Development → Import plugin from manifest…**
 3. Pick `manifest.json` from the folder.
-4. Select a layer, then **Plugins → Development → Holo Sticker by Rikki Janae**.
+4. Select a layer, then **Plugins → Development → Shiny Sticker by Rikki Janae**.
 
 No build step needed to run it — `ui.html` is committed pre-built.
 
