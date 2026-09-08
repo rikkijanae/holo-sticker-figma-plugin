@@ -1,8 +1,8 @@
-// Holo Sticker — Figma plugin main thread.
+// Shiny Sticker — Figma plugin main thread.
 // Exports the selection to PNG, hands the pixels to the UI (which does the
 // WebGL work), then puts the processed result back in as an image node.
 
-figma.showUI(__html__, { width: 370, height: 740, title: 'Holo Sticker by Rikki Janae' });
+figma.showUI(__html__, { width: 370, height: 740, title: 'Shiny Sticker by Rikki Janae' });
 
 var MAX_IMAGE_DIM = 4096; // Figma's hard limit for createImage()
 var PREVIEW_MAX = 640;    // preview exports are capped to this many px
