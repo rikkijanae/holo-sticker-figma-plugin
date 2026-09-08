@@ -1,4 +1,4 @@
-/* Holo Sticker — plugin UI controller. */
+/* Shiny Sticker — plugin UI controller. */
 
 const PRESETS = [
   { // 0 — sequin flakes tinted by the artwork underneath, a few holo ones between
