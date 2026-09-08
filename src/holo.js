@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   Holo Sticker — WebGL pipeline.
+   Shiny Sticker — WebGL pipeline.
    Two passes:
      1. sdf       : distance-to-nearest-opaque-pixel, quarter res. Cached —
                     only re-runs when the source or the padding changes.
