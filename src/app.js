@@ -7,19 +7,13 @@ const PRESETS = [
     holoAuto: false, holoN: 3, holoLift: 1.15, cover: 1.0,
     jitter: 0.42, vary: 0.08, sparkle: 0.5, angle: 35, gloss: 0.5, borderW: 7, borderHolo: 0.28
   },
-  { // 1 — full-spectrum sequin confetti
-    name: 'Rainbow', mode: 0,
-    intensity: 1.3, tint: 0.0, holoMix: 0.0, colorVary: 0.0, flakeScale: 1.0, spread: 1.0,
-    holoAuto: true, holoN: 3, holoLift: 1.15, cover: 1.0,
-    jitter: 0.42, vary: 0.08, sparkle: 0.75, angle: 35, gloss: 0.55, borderW: 7, borderHolo: 0.28
-  },
-  { // 2 — fine glitter dust
+  { // 1 — fine glitter dust
     name: 'Glitter', mode: 1,
     intensity: 0.9, tint: 0.0, holoMix: 0.0, colorVary: 0.45, flakeScale: 1.0, spread: 1.35,
     holoAuto: true, holoN: 3, holoLift: 1.15, cover: 1.0,
     jitter: 0.72, vary: 0.25, sparkle: 0.85, angle: 35, gloss: 0.45, borderW: 6, borderHolo: 0.6
   },
-  { // 3 — prismatic foil
+  { // 2 — prismatic foil
     name: 'Foil', mode: 2,
     intensity: 0.8, tint: 0.0, holoMix: 0.0, colorVary: 0.0, flakeScale: 1.0, spread: 1.1,
     holoAuto: true, holoN: 3, holoLift: 1.15, cover: 1.0,

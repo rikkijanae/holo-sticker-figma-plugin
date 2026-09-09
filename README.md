@@ -24,23 +24,22 @@ No build step needed to run it — `ui.html` is committed pre-built.
 
 | | |
 |---|---|
-| **Tinted** | Confetti discs that take their colour from the artwork underneath, with a scattering of rainbow/silver flakes between — the Sandylion sticker-sheet look. |
-| **Rainbow** | Same discs, full spectrum, ignoring the artwork's colour. |
+| **Tinted** | Confetti discs that take their colour from the artwork underneath, with a scattering of iridescent/silver flakes between — the Sandylion sticker-sheet look. |
 | **Glitter** | Dense fine grain, like glitter cardstock. |
 | **Foil** | No particles — flowing oil-slick film. |
 
-All four are just starting points for the same shader — the sliders move freely between them.
+All three are just starting points for the same shader — the sliders move freely between them.
 
 ## Controls
 
 - **Shimmer** — overall strength of the holo layer.
 - **Object tint** — 0 = every flake is full spectrum; 1 = each flake takes the colour of the artwork under its centre and stays at that lightness. A black sticker stays black, a pink one stays pink.
 - **Colour vary** — how far each flake's hue and saturation drift from the object's own colour. A pink sticker at 0 is one flat pink; at 0.55 you get magenta, coral and pale-pink flakes mixed through it.
-- **Holo flakes** — what fraction of the flakes are iridescent flashes rather than object-coloured. They're recoloured at the artwork's own lightness, so they read as holo film catching the light, not as rainbow confetti dropped on top.
-- **Holo colours** — a palette of up to four colours for the flash flakes; each flake picks one at random. The default is silver / sky blue / mint, which is what most of the reference sheets use. **+ / −** add and remove swatches. Tick **Auto spectrum instead** to let them run through the rainbow; touching a swatch unticks it for you. The palette survives preset switches. A hand-picked colour composites nearly opaque so it survives being laid over saturated artwork, and skips the dark-ink desaturation that Auto applies.
+- **Holo flakes** — what fraction of the flakes are iridescent flashes rather than object-coloured. They're recoloured at the artwork's own lightness, so they read as holo film catching the light, not as coloured confetti dropped on top.
+- **Holo colours** — a palette of up to four colours for the flash flakes; each flake picks one at random. The default is silver / sky blue / mint, which is what most of the reference sheets use. **+ / −** add and remove swatches. Tick **Auto spectrum instead** to let them run through the spectrum; touching a swatch unticks it for you. The palette survives preset switches. A hand-picked colour composites nearly opaque so it survives being laid over saturated artwork, and skips the dark-ink desaturation that Auto applies.
 - **Holo lift** — how much brighter the flash flakes are allowed to be than the artwork. Push this up to make gold or silver pop on a dark sticker; pull it down to keep everything flush.
 - **Flake size** — scales the discs (in design px, so it's resolution-independent). The discs overlap into a full mosaic with no gaps, like the reference sheets; this only changes how many there are.
-- **Hue spread** — how much of the spectrum the flakes span. Low = tonal, high = full rainbow.
+- **Hue spread** — how much of the spectrum the flakes span. Low = tonal, high = full spectrum.
 - **Scatter** — how far each flake is jittered off its grid cell. Low = evenly packed confetti (the reference sheets), high = loose and clumpy.
 - **Sparkle** — the white specular pops on individual flakes.
 - **Light angle** — direction the light sweeps from; each flake shades from that side.
