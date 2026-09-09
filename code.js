@@ -2,7 +2,7 @@
 // Exports the selection to PNG, hands the pixels to the UI (which does the
 // WebGL work), then puts the processed result back in as an image node.
 
-figma.showUI(__html__, { width: 370, height: 740, title: 'Shiny Sticker by Rikki Janae' });
+figma.showUI(__html__, { width: 370, height: 740, title: 'Shiny Sticker' });
 
 var MAX_IMAGE_DIM = 4096; // Figma's hard limit for createImage()
 var PREVIEW_MAX = 640;    // preview exports are capped to this many px
@@ -76,15 +76,19 @@ function toBytes(v) {
   return new Uint8Array(Object.keys(v).map(function (k) { return v[k]; }));
 }
 
-function place(node, bytes, scale, padOutputPx, keepOriginal) {
+function place(node, bytes, scale, padOutputPx, keepOriginal, outScale) {
   var image = figma.createImage(toBytes(bytes));
   var abb = node.absoluteBoundingBox;
   var arb = node.absoluteRenderBounds || abb;
   var padUnits = padOutputPx / scale;
+  var k = outScale || 1;
+
+  var w = (arb.width + padUnits * 2) * k;
+  var h = (arb.height + padUnits * 2) * k;
 
   var rect = figma.createRectangle();
-  rect.name = node.name + ' — holo';
-  rect.resize(arb.width + padUnits * 2, arb.height + padUnits * 2);
+  rect.name = node.name + ' holo';
+  rect.resize(w, h);
   rect.fills = [{ type: 'IMAGE', imageHash: image.hash, scaleMode: 'FILL' }];
 
   var parent = node.parent || figma.currentPage;
@@ -92,8 +96,12 @@ function place(node, bytes, scale, padOutputPx, keepOriginal) {
   parent.insertChild(Math.max(index, 0), rect);
 
   // node.x/y are parent-relative; the abb -> arb delta is the render-bounds offset.
-  rect.x = node.x + (arb.x - abb.x) - padUnits;
-  rect.y = node.y + (arb.y - abb.y) - padUnits;
+  // Scaling grows the sticker about its own centre, so it stays where the
+  // original sat instead of drifting down-right off the artwork.
+  var x0 = node.x + (arb.x - abb.x) - padUnits;
+  var y0 = node.y + (arb.y - abb.y) - padUnits;
+  rect.x = x0 - (w - (arb.width + padUnits * 2)) / 2;
+  rect.y = y0 - (h - (arb.height + padUnits * 2)) / 2;
 
   if (!keepOriginal) node.visible = false;
   return rect;
@@ -130,7 +138,7 @@ figma.ui.onmessage = async function (msg) {
   // UI finished a full-res render.
   if (msg.type === 'result') {
     var node = await figma.getNodeByIdAsync(msg.nodeId);
-    if (node) made.push(place(node, msg.bytes, msg.scale, msg.pad, msg.keepOriginal));
+    if (node) made.push(place(node, msg.bytes, msg.scale, msg.pad, msg.keepOriginal, msg.outScale));
     figma.ui.postMessage({ type: 'placed', index: msg.index, total: msg.total });
     return;
   }

@@ -1,7 +1,7 @@
 {
-  "name": "shiny-sticker-figma-plugin",
+  "name": "holo-sticker-figma-plugin",
   "version": "1.0.0",
-  "description": "Figma plugin that turns any layer into a 90s/00s holographic sequin sticker — rendered in WebGL, dropped back in as an image.",
+  "description": "Shiny Sticker: a Figma plugin that turns any layer into a 90s/00s holographic sequin sticker, rendered in WebGL and dropped back in as an image.",
   "author": "Rikki Janae",
   "license": "MIT",
   "private": true,

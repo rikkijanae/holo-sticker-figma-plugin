@@ -3,9 +3,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* Light only. Values are the Light mode of color/panel/* in the Shiny
+     Sticker Figma file, which aliases the true-neutral grey/* ramp. Do not
+     reach for the site's warm neutral/* tones here.
+     Layout follows Plugin Panel / v5: fixed preview, fixed footer, and a
+     scrolling middle of white section cards that collapse to a header
+     carrying a value summary. */
   :root{
-    --bg:#1F1F1F; --card:#262626; --line:#333333; --track:#3A3A3A;
-    --fg:#EDEDED; --dim:#8C8C8C; --faint:#5A5A5A;
+    --bg:#FAFAFA; --card:#FFFFFF; --inset:#FAFAFA;
+    --line:#E4E4E4; --line-strong:#D1D1D1; --track:#D1D1D1;
+    --fg:#161616; --dim:#545454; --faint:#767676; --inverse:#FFFFFF;
+    --action:#161616;
+    --r-xs:2px; --r-sm:4px; --r-md:8px;
+    --check:rgba(0,0,0,.04);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
@@ -14,106 +24,187 @@
     -webkit-font-smoothing:antialiased; user-select:none;
     display:flex; flex-direction:column; height:100vh; overflow:hidden;
   }
-  .mono{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .mono{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums}
 
-  /* ---- preview ---- */
+  /* ---- fixed preview ---------------------------------------------------- */
   .stage{
-    flex:0 0 auto; position:relative; height:220px;
+    flex:0 0 190px; position:relative;
     display:flex; align-items:center; justify-content:center; overflow:hidden;
-    border-bottom:1px solid var(--line);
-    background-color:#242424;
+    background-color:var(--inset);
     background-image:
-      linear-gradient(45deg,#2B2B2B 25%,transparent 25%,transparent 75%,#2B2B2B 75%),
-      linear-gradient(45deg,#2B2B2B 25%,transparent 25%,transparent 75%,#2B2B2B 75%);
+      linear-gradient(45deg,var(--check) 25%,transparent 25%,transparent 75%,var(--check) 75%),
+      linear-gradient(45deg,var(--check) 25%,transparent 25%,transparent 75%,var(--check) 75%);
     background-size:14px 14px; background-position:0 0,7px 7px;
   }
-  #preview{max-width:calc(100% - 24px); max-height:196px; display:none}
-  #hint{position:absolute; color:var(--dim); text-align:center; padding:0 24px}
+  #preview{max-width:calc(100% - 32px); max-height:162px; display:none}
+  #hint{position:absolute; color:var(--dim); text-align:center; padding:0 28px}
 
-  /* ---- controls ---- */
-  .body{flex:1 1 auto; overflow-y:auto; padding:12px}
-  .body::-webkit-scrollbar{width:6px}
-  .body::-webkit-scrollbar-thumb{background:var(--track)}
+  /* ---- scrolling middle ------------------------------------------------- */
+  .body{flex:1 1 auto; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px}
+  .body > *{flex:0 0 auto}   /* cards keep their height; the body scrolls */
+  .body::-webkit-scrollbar{width:5px}
+  .body::-webkit-scrollbar-thumb{background:var(--track); border-radius:var(--r-full,999px)}
+  .body::-webkit-scrollbar-track{background:transparent}
 
-  .seg{display:flex; border:1px solid var(--line); margin-bottom:12px}
+  #sections{display:flex; flex-direction:column; gap:8px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r-md)}
+
+  /* preset tabs */
+  .seg{display:flex; padding:1px; gap:1px; overflow:hidden}
   .seg button{
-    flex:1; border:0; border-right:1px solid var(--line); background:transparent;
+    flex:1; border:0; background:transparent; border-radius:6px;
     color:var(--dim); font:inherit; font-weight:500; padding:7px 0; cursor:pointer;
   }
-  .seg button:last-child{border-right:0}
-  .seg button.on{background:var(--fg); color:#111}
+  .seg button:hover{color:var(--fg)}
+  .seg button.on{background:var(--action); color:var(--inverse)}
 
-  .row{display:flex; align-items:center; gap:10px; min-height:24px; margin-bottom:6px}
-  .row label{flex:0 0 84px; color:var(--dim)}
-  .row .val{flex:0 0 38px; text-align:right; color:var(--dim); font-family:"Geist Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+  /* section card */
+  .sec{padding:12px 14px}
+  .sec > .rows{display:none; padding-top:11px; flex-direction:column; gap:7px}
+  .sec.open > .rows{display:flex}
 
+  .shead{display:flex; align-items:center; gap:8px; min-height:15px; cursor:pointer}
+  .shead .t{font-weight:500; color:var(--fg)}
+  .shead .sum{
+    flex:1; text-align:right; color:var(--faint);
+    font-family:"Geist Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .chev{
+    flex:0 0 7px; width:7px; height:5px; background:var(--faint);
+    clip-path:polygon(0 0,100% 0,50% 100%); transition:transform .12s;
+  }
+  .sec.open .chev{transform:rotate(180deg)}
+  /* An open section shows its controls, so the header summary would just be a
+     second copy of the same numbers twitching as you drag. */
+  .sec.open .shead .sum{visibility:hidden}
+
+  /* slider row: label, track, value box (v5 keeps the number on the right) */
+  .row{display:flex; align-items:center; gap:10px; min-height:19px}
+  .row > label{flex:0 0 74px; color:var(--dim)}
+  .row .valbox{
+    flex:0 0 40px; height:19px; border:1px solid var(--line); border-radius:var(--r-sm);
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Geist Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums;
+    color:var(--fg); font-size:10px;
+  }
   input[type=range]{
-    -webkit-appearance:none; appearance:none; flex:1; height:2px; margin:0;
-    background:linear-gradient(90deg,var(--fg) 0%,var(--fg) 50%,var(--track) 50%,var(--track) 100%);
+    -webkit-appearance:none; appearance:none; flex:1; height:10px; margin:0;
     cursor:ew-resize; outline:0;
+    /* No slab behind the slider: the 2px line IS the background-image, painted
+       per-frame in the row's sync. background-color must stay transparent —
+       background-size only clips the image, never the colour. */
+    background-color:transparent; background-size:100% 2px;
+    background-position:center; background-repeat:no-repeat;
   }
   input[type=range]::-webkit-slider-runnable-track{height:2px; background:transparent}
   input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none; width:10px; height:10px; border-radius:0; border:0;
-    background:var(--fg); margin-top:-4px; cursor:ew-resize;
+    -webkit-appearance:none; width:10px; height:10px; border-radius:50%; border:0;
+    background:var(--action); margin-top:-4px; cursor:ew-resize;
   }
-  input[type=range]:focus-visible::-webkit-slider-thumb{outline:1px solid var(--fg); outline-offset:2px}
+  input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--action)}
+  input[type=range]:disabled{opacity:.4; cursor:default}
 
+  /* checkbox */
+  .check{display:flex; align-items:center; gap:7px; color:var(--fg); cursor:pointer}
   input[type=checkbox]{
-    -webkit-appearance:none; appearance:none; width:12px; height:12px; margin:0;
-    border:1px solid var(--dim); background:transparent; cursor:pointer; flex:0 0 12px;
-    vertical-align:-2px;
+    -webkit-appearance:none; appearance:none; width:13px; height:13px; margin:0; flex:0 0 13px;
+    border:1px solid var(--faint); border-radius:var(--r-xs); background:transparent;
+    cursor:pointer; position:relative;
   }
-  input[type=checkbox]:checked{background:var(--fg); border-color:var(--fg); box-shadow:inset 0 0 0 2px var(--bg)}
-
-  select{
-    -webkit-appearance:none; appearance:none; flex:1; background:transparent; color:var(--fg);
-    border:0; border-bottom:1px solid var(--line); font:inherit; padding:4px 0; cursor:pointer;
-    background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
-    background-position:calc(100% - 9px) 55%,calc(100% - 5px) 55%; background-size:4px 4px; background-repeat:no-repeat;
+  input[type=checkbox]:checked{background:var(--action); border-color:var(--action)}
+  /* A real tick, not an inset hole — the hole read as a filled radio. */
+  input[type=checkbox]:checked::after{
+    content:''; position:absolute; left:4px; top:1px; width:3px; height:6px;
+    border:solid var(--inverse); border-width:0 1.5px 1.5px 0; transform:rotate(43deg);
   }
-  select option{background:var(--card); color:var(--fg)}
 
-  .swatches{flex:1; display:flex; gap:4px; transition:opacity .15s}
-  .swatches input[type=color]{
-    width:30px; height:18px; padding:0; border:1px solid var(--line); border-radius:0;
-    background:none; cursor:pointer;
+  /* pill toggle */
+  .sw{
+    flex:0 0 26px; width:26px; height:14px; border-radius:999px; background:var(--track);
+    position:relative; cursor:pointer; transition:background .12s; border:0; padding:0;
   }
-  .swatches input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
-  .swatches input[type=color]::-webkit-color-swatch{border:0; border-radius:0}
-
-  button.mini{
-    flex:0 0 18px; height:18px; padding:0; border:1px solid var(--line); border-radius:0;
-    background:transparent; color:var(--fg); font:inherit; cursor:pointer; line-height:1;
+  .sw::after{
+    content:''; position:absolute; top:2px; left:2px; width:10px; height:10px;
+    border-radius:50%; background:#F4F4F4; transition:transform .12s,background .12s;
   }
-  button.mini:disabled{opacity:.3; cursor:default}
-  button.ghost{
-    background:transparent; border:1px solid var(--line); border-radius:0; color:var(--fg);
-    font:inherit; padding:4px 9px; cursor:pointer;
+  .sw.on{background:var(--action)}
+  .sw.on::after{transform:translateX(12px); background:var(--inverse)}
+
+  /* holo swatches */
+  .palblock{display:flex; flex-direction:column; gap:7px}
+  .palhead{display:flex; align-items:center; gap:8px}
+  .palhead .t{color:var(--dim)}
+  .palhead .n{
+    flex:1; text-align:right; color:var(--faint); font-size:8px;
+    font-family:"Geist Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums;
   }
-  button.ghost:hover, button.mini:not(:disabled):hover{border-color:var(--dim)}
+  .chips{display:flex; gap:8px; margin-top:2px; transition:opacity .15s}
+  .chip{flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:5px}
+  .well{
+    position:relative; width:100%; height:30px; padding:3px;
+    border:1px solid var(--line); border-radius:var(--r-sm); background:transparent;
+    cursor:pointer; display:block;
+  }
+  .well .fillcol{width:100%; height:100%; border-radius:var(--r-xs)}
+  .well input[type=color]{position:absolute; inset:0; opacity:0; width:100%; height:100%; border:0; padding:0; cursor:pointer}
+  /* The cross is drawn, not typed: the \u00d7 glyph sits on the font's math axis,
+     which is above the optical centre of a round badge. Two bars centre exactly. */
+  .kill{
+    position:absolute; top:-7px; right:-7px; width:17px; height:17px; padding:0;
+    border-radius:50%; border:2px solid var(--card); background:var(--action);
+    cursor:pointer; font-size:0; line-height:0;
+  }
+  .kill::before, .kill::after{
+    content:''; position:absolute; left:50%; top:50%;
+    width:7px; height:1.5px; border-radius:1px; background:var(--inverse);
+  }
+  .kill::before{transform:translate(-50%,-50%) rotate(45deg)}
+  .kill::after{transform:translate(-50%,-50%) rotate(-45deg)}
+  .kill:hover{background:var(--dim)}
+  .chip .hex{font:8px/1 "Geist Mono",ui-monospace,monospace; color:var(--faint); letter-spacing:.02em}
+  .chip.add .well{
+    border:1px dashed var(--line-strong); display:flex; align-items:center; justify-content:center;
+    color:var(--dim); font-size:12px; font-weight:500;
+  }
+  .chips.auto{opacity:.35; pointer-events:none}
+  .chip.add.full{opacity:.35; pointer-events:none}
 
-  .group{border-top:1px solid var(--line); margin-top:10px; padding-top:10px}
-  .ghead{display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:500}
-  .ghead label{cursor:pointer}
-  .collapsed .row{display:none}
+  /* output */
+  .note{color:var(--faint); padding-left:84px; line-height:1.35}
+  .segsm{display:flex; gap:4px; flex:1}
+  .segsm button{
+    flex:1; border:1px solid var(--line); border-radius:var(--r-sm); background:transparent;
+    color:var(--dim); font:inherit; padding:4px 0; cursor:pointer;
+  }
+  .segsm button.on{background:var(--action); border-color:var(--action); color:var(--inverse)}
 
-  /* ---- footer ---- */
-  .foot{flex:0 0 auto; border-top:1px solid var(--line); padding:12px}
+  /* ---- fixed footer ----------------------------------------------------- */
+  .foot{flex:0 0 auto; background:var(--card); border-top:1px solid var(--line); padding:12px}
   .foot .actions{display:flex; align-items:center; gap:10px}
-  .foot .meta{flex:1; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  button.link{
+    background:transparent; border:0; padding:0; color:var(--dim); font:inherit;
+    text-decoration:underline; text-underline-offset:2px; cursor:pointer;
+  }
+  button.link:hover{color:var(--fg)}
+  button.ghost{
+    background:transparent; border:1px solid var(--line); border-radius:var(--r-sm);
+    color:var(--fg); font:inherit; padding:4px 10px; cursor:pointer;
+  }
+  button.ghost:hover{border-color:var(--dim)}
+  .foot .spacer{flex:1}
   button.primary{
-    background:var(--fg); color:#111; border:0; border-radius:0;
+    background:var(--action); color:var(--inverse); border:0; border-radius:6px;
     padding:8px 18px; font:inherit; font-weight:600; cursor:pointer;
   }
   button.primary:disabled{opacity:.35; cursor:default}
-  .credit{
-    margin-top:12px; font:8px/1 "Geist Mono",ui-monospace,monospace; letter-spacing:.02em;
-    color:var(--faint); text-align:center;
+  #meta{
+    margin-top:10px; font:8px/1.4 "Geist Mono",ui-monospace,monospace; color:var(--faint);
+    text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  .credit a{color:var(--faint); text-decoration:underline; text-underline-offset:2px}
-  .credit a:hover{color:var(--dim)}
-  .err{color:#FF6B6B; padding:0 12px 8px}
+  #meta a{color:var(--faint); text-decoration:underline; text-underline-offset:2px}
+  #meta a:hover{color:var(--dim)}
+  .err{color:#D93025; background:var(--card); border-top:1px solid var(--line); padding:8px 12px}
 </style>
 
 <div class="stage">
@@ -122,59 +213,20 @@
 </div>
 
 <div class="body">
-  <div class="seg" id="preset"></div>
-  <div id="mainTop"></div>
-  <div class="row">
-    <label>Holo colours</label>
-    <div class="swatches" id="swatches"></div>
-    <button class="mini" id="palMinus" title="Fewer colours">&minus;</button>
-    <button class="mini" id="palPlus" title="More colours">+</button>
-  </div>
-  <div class="row" style="margin-top:-2px">
-    <label></label>
-    <label for="holoAuto" style="flex:1; display:flex; align-items:center; gap:6px; color:var(--fg); cursor:pointer">
-      <input type="checkbox" id="holoAuto">Auto spectrum instead
-    </label>
-  </div>
-  <div id="mainBottom"></div>
-
-  <div class="group" id="g-border">
-    <div class="ghead"><input type="checkbox" id="border" checked><label for="border">Die-cut border</label></div>
-    <div id="borderRows"></div>
-  </div>
-
-  <div class="group collapsed" id="g-shadow">
-    <div class="ghead"><input type="checkbox" id="shadow"><label for="shadow">Drop shadow</label></div>
-    <div id="shadowRows"></div>
-  </div>
-
-  <div class="group">
-    <div class="row">
-      <label>Resolution</label>
-      <select id="res">
-        <option value="2">2x</option>
-        <option value="3" selected>3x</option>
-        <option value="4">4x</option>
-      </select>
-      <button class="ghost" id="shuffle">Shuffle</button>
-    </div>
-    <div class="row" style="margin-bottom:0">
-      <label></label>
-      <label for="keep" style="flex:1; display:flex; align-items:center; gap:6px; color:var(--fg); cursor:pointer">
-        <input type="checkbox" id="keep" checked>Keep the original layer
-      </label>
-    </div>
-  </div>
+  <div class="card seg" id="preset"></div>
+  <div id="sections"></div>
 </div>
 
 <div class="err" id="err" style="display:none"></div>
 
 <div class="foot">
   <div class="actions">
-    <span class="meta" id="meta"></span>
+    <button class="link" id="reset">Reset</button>
+    <button class="ghost" id="shuffle">Shuffle</button>
+    <span class="spacer"></span>
     <button class="primary" id="apply" disabled>Apply</button>
   </div>
-  <div class="credit">Vibe Coded by <a href="https://rikkijanae.com" target="_blank" rel="noopener">Rikki Janae</a></div>
+  <div id="meta">Vibe Coded by <a href="https://rikkijanae.com" target="_blank" rel="noopener">Rikki Janae</a></div>
 </div>
 
 <script>
@@ -266,6 +318,8 @@ uniform vec3  uHoloPal0;
 uniform vec3  uHoloPal1;
 uniform vec3  uHoloPal2;
 uniform vec3  uHoloPal3;
+uniform vec3  uHoloPal4;
+uniform vec3  uHoloPal5;
 uniform float uColorVary;
 uniform float uJitter;
 uniform float uCover;
@@ -325,6 +379,8 @@ vec3 pickPal(float r){
   if (k > 1.0) c = uHoloPal1;
   if (k > 2.0) c = uHoloPal2;
   if (k > 3.0) c = uHoloPal3;
+  if (k > 4.0) c = uHoloPal4;
+  if (k > 5.0) c = uHoloPal5;
   return c;
 }
 
@@ -492,13 +548,45 @@ void main(){
       fl2 = flakes(pd,  2.1 * uFlakeScale, 0.44, 0.62, 0.66, 31.7, uTint, src.rgb, sp2, hc2);
     } else {                                // prismatic foil
       fl  = foil(pd, sp1);
+      // Object tint is hidden on the Foil tab (Rikki, 2026-09-09) and the Foil
+      // preset pins uTint to 0, so this branch is unreachable from the panel.
+      // Kept because it is correct and one line in HIDDEN brings it back.
       if (uTint > 0.001) {
-        float fLum = dot(fl.rgb, LUMA);
-        float oLum = dot(src.rgb, LUMA);
-        vec3 tf = clamp(mix(vec3(oLum), src.rgb, 1.4) * (0.45 + 1.15 * fLum), 0.0, 1.0);
-        fl.rgb = mix(fl.rgb, mix(tf, fl.rgb, 0.18), uTint);
+        // Tint must COLOUR the foil, not erase it. The old version keyed off
+        // the foil's luminance, which pal() keeps nearly flat — the swirl lives
+        // in the hue — so tinting collapsed to a flat wash of the artwork.
+        // Instead: keep the foil's light/dark as a modulation of the artwork's
+        // own lightness (same luminance matching the flake path uses, so a
+        // black sticker stays black), take hue and saturation from the artwork,
+        // and leave a narrow hue swing so it still reads as iridescent.
+        vec3  oh = rgb2hsv(src.rgb);
+        vec3  fh = rgb2hsv(fl.rgb);
+        float ol = dot(src.rgb, LUMA);
+        float f  = fh.z;
+
+        // Lightness is ALWAYS matched to the artwork, whatever the hue does —
+        // that is what keeps a black sticker black. Do not let the hue blend
+        // below feed back into L, or neutrals bleach out (the old chroma-gate
+        // bug in the flake path).
+        float L = clamp(ol * (0.55 + 0.9 * f) + (1.0 - ol) * 0.28 * f * f, 0.0, 1.0);
+
+        // A coloured artwork lends its own hue; a neutral one (black, white,
+        // grey) has no hue to lend, so the foil keeps a muted version of its
+        // own. Black holo foil is dark AND iridescent, not flat black.
+        float w = clamp(oh.y * 2.2, 0.0, 1.0);
+        float hue = mix(fh.x, fract(oh.x + (fh.x - 0.5) * 0.16), w);
+        float sat = mix(fh.y * 0.55, oh.y * (0.85 + 0.30 * f), w);
+
+        vec3 tf = hsv2rgb(vec3(hue, clamp(sat, 0.0, 1.0), L));
+        fl.rgb = mix(fl.rgb, tf, uTint);
       }
     }
+
+    // Keep the mosaic off the artwork's antialiased rim. Without this the
+    // flakes are laid at full strength on half-transparent edge pixels, which
+    // then composite over the die-cut and read as colour leaking past it.
+    // Genuinely translucent artwork (a 50%-opacity layer) still gets ~0.9.
+    float core = smoothstep(0.06, 0.62, src.a);
 
     vec3 art = mix(src.rgb, src.rgb * 0.9 + 0.07, 0.3);   // gentle plastic lift
 
@@ -509,9 +597,14 @@ void main(){
 
     // the mosaic. Shimmer scales how solidly it covers the ink.
     float solidity = mix(0.75, 0.30, uHoloAuto);
-    float a1 = clamp(fl.a * uIntensity * 0.78, 0.0, 1.0);
-    art = mix(art, layFlake(art, fl.rgb, hc1 * solidity), a1);
-    float a2 = clamp(fl2.a * uIntensity * 0.6, 0.0, 1.0);
+    // Foil composites straight in proportion to tint. layFlake at solid = 0 is
+    // essentially hard-light, and hard-light can never lift a black base, so a
+    // black sticker showed no tinted foil at all. The tinted colour is already
+    // luminance-matched, so laying it straight is both correct and visible.
+    float solid1 = (uMode == 2) ? uTint * 0.92 : hc1 * solidity;
+    float a1 = clamp(fl.a * uIntensity * 0.78, 0.0, 1.0) * core;
+    art = mix(art, layFlake(art, fl.rgb, solid1), a1);
+    float a2 = clamp(fl2.a * uIntensity * 0.6, 0.0, 1.0) * core;
     art = mix(art, layFlake(art, fl2.rgb, hc2 * solidity), a2);
 
     // flakes catch the most light where the ink is dark (rainbow mode only)
@@ -534,7 +627,7 @@ void main(){
       if (uBorderHolo > 0.002){
         float bsp = 0.0, bhc = 0.0;
         vec4 bf = flakes(pd, 7.0 * uFlakeScale, 0.62, 0.76, 0.85, 5.3, 0.0, vec3(0.9), bsp, bhc);
-        vec3 bfc = mix(vec3(dot(bf.rgb, vec3(0.333))), bf.rgb, 0.6);
+        vec3 bfc = mix(vec3(dot(bf.rgb, vec3(0.333))), bf.rgb, 0.16);
         vec3 silver = layFlake(vec3(0.9), mix(vec3(0.88), bfc, bf.a * 0.5), 0.0);
         bcol = mix(bcol, clamp(silver + bsp * 0.4, 0.0, 1.0), uBorderHolo);
       }
@@ -694,7 +787,7 @@ class HoloRenderer {
     gl.uniform1f(u('uHoloLift'), o.holoLift);
     const pal = o.holoPal && o.holoPal.length ? o.holoPal : [[0.93, 0.92, 0.96]];
     gl.uniform1f(u('uHoloN'), pal.length);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       const c = pal[Math.min(i, pal.length - 1)];
       gl.uniform3f(u('uHoloPal' + i), c[0], c[1], c[2]);
     }
@@ -732,61 +825,110 @@ class HoloRenderer {
 
 </script>
 <script>
-/* Shiny Sticker — plugin UI controller. */
+/* Shiny Sticker — plugin UI controller.
+   Layout follows Plugin Panel / v5 in the Shiny Sticker Figma file:
+   fixed preview, fixed footer, and a scrolling middle of white section cards
+   that collapse to a header carrying a value summary. */
+
+const PAL_MAX = 6;   // uHoloPal0..5 in the shader
+
+// Rikki's accents. These are the plugin's defaults; the swatches stay put
+// when you switch preset, because they're the user's choice, not the preset's.
+const DEFAULT_PAL = ['#78ff18', '#fbff2b', '#2bf8ff', '#ff00f2'];
+const SPARE_PAL = ['#ff4f27', '#a96bff'];   // offered by the Add slot
 
 const PRESETS = [
-  { // 0 — sequin flakes tinted by the artwork underneath, a few holo ones between
-    name: 'Tinted', mode: 0,
+  { // sequin flakes tinted by the artwork underneath, a few holo ones between.
+    // Auto spectrum instead + Object tint 0 reproduces the old Rainbow preset,
+    // which is why that tab was dropped (Rikki, 2026-09-09).
+    id: 'tinted', name: 'Tinted', mode: 0,
     intensity: 1.15, tint: 1.0, holoMix: 0.25, colorVary: 0.55, flakeScale: 1.0, spread: 1.0,
-    holoAuto: false, holoN: 3, holoLift: 1.15, cover: 1.0,
+    holoAuto: false, holoLift: 1.15, cover: 1.0,
     jitter: 0.42, vary: 0.08, sparkle: 0.5, angle: 35, gloss: 0.5, borderW: 7, borderHolo: 0.28
   },
-  { // 1 — fine glitter dust
-    name: 'Glitter', mode: 1,
+  { // fine glitter dust
+    id: 'glitter', name: 'Glitter', mode: 1,
     intensity: 0.9, tint: 0.0, holoMix: 0.0, colorVary: 0.45, flakeScale: 1.0, spread: 1.35,
-    holoAuto: true, holoN: 3, holoLift: 1.15, cover: 1.0,
+    holoAuto: true, holoLift: 1.15, cover: 1.0,
     jitter: 0.72, vary: 0.25, sparkle: 0.85, angle: 35, gloss: 0.45, borderW: 6, borderHolo: 0.6
   },
-  { // 2 — prismatic foil
-    name: 'Foil', mode: 2,
+  { // prismatic foil: a smooth sheet, so no speckle and a stronger sweep
+    id: 'foil', name: 'Foil', mode: 2,
     intensity: 0.8, tint: 0.0, holoMix: 0.0, colorVary: 0.0, flakeScale: 1.0, spread: 1.1,
-    holoAuto: true, holoN: 3, holoLift: 1.15, cover: 1.0,
-    jitter: 0.42, vary: 0.08, sparkle: 0.5, angle: 50, gloss: 0.7, borderW: 8, borderHolo: 0.15
+    holoAuto: true, holoLift: 1.15, cover: 1.0,
+    jitter: 0.0, vary: 0.08, sparkle: 0.0, angle: 50, gloss: 0.92, borderW: 8, borderHolo: 0.15
   }
 ];
 
-const S = Object.assign({
-  preset: 0, seed: 7.31,
-  // the holo palette survives preset switches — it's the user's choice
-  holoColors: ['#eceaf5', '#7fd8ff', '#9dffb4', '#ffe08a'],
-  border: true, shadow: false,
-  shadowBlur: 8, shadowOpacity: 0.28, shadowX: 0, shadowY: 4,
-  keepOriginal: true, exportScale: 3
-}, PRESETS[0]);
+function freshState() {
+  return Object.assign({
+    preset: 0, seed: 7.31,
+    holoColors: DEFAULT_PAL.slice(),
+    border: true, shadow: false,
+    shadowBlur: 8, shadowOpacity: 0.28, shadowX: 0, shadowY: 4,
+    keepOriginal: true, exportScale: 3, outScale: 1
+  }, PRESETS[0]);
+}
+const S = freshState();
 
-const MAIN_FIELDS = [
-  ['intensity',  'Shimmer',    0,    2,   0.01],
-  ['tint',       'Object tint',0,    1,   0.01],
-  ['colorVary',  'Colour vary',0,    1,   0.01],
-  ['holoMix',    'Holo flakes',0,    1,   0.01],
-  ['flakeScale', 'Flake size', 0.3,  3,   0.01],
-  ['spread',     'Hue spread', 0.2,  3,   0.01],
-  ['cover',      'Coverage',   0.5,  1.15,0.01],
-  ['jitter',     'Scatter',    0,    1,   0.01],
-  ['holoLift',   'Holo lift',  0.3,  2.5, 0.01],
-  ['sparkle',    'Sparkle',    0,    1,   0.01],
-  ['angle',      'Light angle',0,    360, 1],
-  ['gloss',      'Gloss',      0,    1,   0.01]
-];
-const BORDER_FIELDS = [
-  ['borderW',    'Width',      0,    24,  0.5],
-  ['borderHolo', 'Silver holo',0,    1,   0.01]
-];
-const SHADOW_FIELDS = [
-  ['shadowBlur',    'Blur',    0,    30,  0.5],
-  ['shadowOpacity', 'Opacity', 0,    1,   0.01],
-  ['shadowX',       'Offset X',-20,  20,  0.5],
-  ['shadowY',       'Offset Y',-20,  20,  0.5]
+// key -> [label, min, max, step]
+const FIELDS = {
+  intensity:     ['Shimmer',     0,   2,    0.01],
+  tint:          ['Object tint', 0,   1,    0.01],
+  colorVary:     ['Colour vary', 0,   1,    0.01],
+  holoMix:       ['Holo flakes', 0,   1,    0.01],
+  flakeScale:    ['Flake size',  0.3, 3,    0.01],
+  spread:        ['Hue spread',  0.2, 3,    0.01],
+  cover:         ['Coverage',    0.5, 1.15, 0.01],
+  jitter:        ['Scatter',     0,   1,    0.01],
+  holoLift:      ['Holo lift',   0.3, 2.5,  0.01],
+  sparkle:       ['Sparkle',     0,   1,    0.01],
+  angle:         ['Light angle', 0,   360,  1],
+  gloss:         ['Gloss',       0,   1,    0.01],
+  borderW:       ['Width',       0,   24,   0.5],
+  borderHolo:    ['Silver holo', 0,   1,    0.01],
+  shadowBlur:    ['Blur',        0,   30,   0.5],
+  shadowOpacity: ['Opacity',     0,   1,    0.01],
+  shadowX:       ['Offset X',   -20,  20,   0.5],
+  shadowY:       ['Offset Y',   -20,  20,   0.5]
+};
+
+// Controls a preset's shader path never reads are hidden, not just left at
+// zero — a slider that does nothing is worse than no slider. Foil is drawn by
+// foil(), which only reads uFlakeScale, uSeed, uAngle and uSpread, so the whole
+// disc-mosaic half of the panel is dead there. Light angle and Sparkle are cut
+// from Foil by choice (Rikki: "remove light"); Gloss stays and carries it.
+const HIDDEN = {
+  // uSpread reaches the flake path only through `rainbow`, and at Object tint 1
+  // with Auto spectrum off that value is replaced outright — so Hue spread is
+  // dead on Tinted. It still works on Glitter (tint 0) and as Spectrum on Foil.
+  tinted: ['spread'],
+  foil: ['holoMix', 'colorVary', 'jitter', 'cover', 'holoLift', 'sparkle',
+         'angle', 'tint', 'palette']
+};
+const presetId = () => PRESETS[S.preset].id;
+const isHidden = (key) => (HIDDEN[presetId()] || []).indexOf(key) >= 0;
+
+// Foil is a prismatic sheet, not a mosaic, so it drops the flake vocabulary.
+// uFlakeScale sizes the domain-warped fbm and uSpread sets how many spectral
+// bands the sweep runs through — "Swirl size" and "Spectrum" are what those
+// actually do here.
+const LABELS = {
+  foil: { intensity: 'Sheen', flakeScale: 'Swirl size', spread: 'Spectrum' }
+};
+const TITLES = {
+  foil: { flakes: 'Foil', texture: 'Pattern', light: 'Finish' }
+};
+const labelOf = (key) => ((LABELS[presetId()] || {})[key]) || FIELDS[key][0];
+const titleOf = (sec) => ((TITLES[presetId()] || {})[sec.id]) || sec.title;
+
+const SECTIONS = [
+  { id: 'flakes',  title: 'Flakes',         open: true,  fields: ['intensity', 'tint', 'colorVary', 'holoMix'], palette: true },
+  { id: 'texture', title: 'Texture',        open: false, fields: ['flakeScale', 'spread', 'cover', 'jitter'] },
+  { id: 'light',   title: 'Light',          open: false, fields: ['holoLift', 'sparkle', 'angle', 'gloss'] },
+  { id: 'border',  title: 'Die-cut border', open: false, fields: ['borderW', 'borderHolo'], toggle: 'border', brief: ['borderW'] },
+  { id: 'shadow',  title: 'Drop shadow',    open: false, fields: ['shadowBlur', 'shadowOpacity', 'shadowX', 'shadowY'], toggle: 'shadow', brief: ['shadowBlur', 'shadowOpacity'] },
+  { id: 'output',  title: 'Output',         open: false, fields: [], output: true }
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -800,37 +942,309 @@ let batch = null, pending = false, dirty = false, selTimer = 0;
 try { renderer = new HoloRenderer(glCanvas); }
 catch (e) { showError(e.message); }
 
-// ---------------------------------------------------------------- controls
+// ---------------------------------------------------------------- formatting
 
-function slider(host, [key, label, min, max, step]) {
-  const row = document.createElement('div');
-  row.className = 'row';
-  row.innerHTML =
-    '<label>' + label + '</label>' +
-    '<input type="range" min="' + min + '" max="' + max + '" step="' + step + '">' +
-    '<span class="val"></span>';
-  const input = row.querySelector('input');
-  const val = row.querySelector('.val');
-  const sync = () => {
-    input.value = S[key];
-    val.textContent = step >= 1 ? Math.round(S[key]) : (+S[key]).toFixed(2).replace(/0$/, '');
-    const pct = ((S[key] - min) / (max - min)) * 100;
-    input.style.background =
-      'linear-gradient(90deg, var(--fg) 0%, var(--fg) ' + pct + '%, var(--track) ' + pct + '%, var(--track) 100%)';
-  };
-  input.addEventListener('input', () => { S[key] = parseFloat(input.value); sync(); schedule(); });
-  sync();
-  host.appendChild(row);
-  return sync;
+function pct() { return Math.round(S.outScale * 100) + '%'; }
+
+function fmt(key) {
+  const f = FIELDS[key], v = S[key];
+  if (f[3] >= 1) return key === 'angle' ? Math.round(v) + '°' : String(Math.round(v));
+  const s = (+v).toFixed(2);
+  return s.charAt(s.length - 1) === '0' ? s.slice(0, -1) : s;
 }
 
-const syncs = [];
-// everything up to and including Holo flakes goes above the colour swatch
-const SPLIT = MAIN_FIELDS.findIndex((f) => f[0] === 'holoMix') + 1;
-MAIN_FIELDS.slice(0, SPLIT).forEach((f) => syncs.push(slider($('mainTop'), f)));
-MAIN_FIELDS.slice(SPLIT).forEach((f) => syncs.push(slider($('mainBottom'), f)));
-BORDER_FIELDS.forEach((f) => syncs.push(slider($('borderRows'), f)));
-SHADOW_FIELDS.forEach((f) => syncs.push(slider($('shadowRows'), f)));
+function summary(sec) {
+  if (sec.output) return S.exportScale + 'x · ' + pct() + ' · ' + (S.keepOriginal ? 'keep' : 'replace');
+  if (sec.toggle && !S[sec.toggle]) return 'Off';
+  const keys = (sec.brief || sec.fields).filter((k) => !isHidden(k));
+  return keys.map(fmt).join(' · ');
+}
+
+// ---------------------------------------------------------------- sections
+
+const syncs = [];     // called whenever S changes wholesale (preset switch, reset)
+const host = $('sections');
+
+// Assigned by buildPalette / buildOutput while the section loop runs below, so
+// they have to be declared here — a later `let` would clobber the real ones.
+let paintPalette = () => {};
+let paintOutput = () => {};
+
+SECTIONS.forEach((sec) => {
+  const card = document.createElement('div');
+  card.className = 'card sec' + (sec.open ? ' open' : '');
+
+  const head = document.createElement('div');
+  head.className = 'shead';
+  head.innerHTML = '<span class="t"></span><span class="sum"></span>';
+  const title = head.querySelector('.t');
+  title.textContent = sec.title;
+  card.appendChild(head);
+
+  const rows = document.createElement('div');
+  rows.className = 'rows';
+  card.appendChild(rows);
+  host.appendChild(card);          // in the document before we look ids up
+
+  const sum = head.querySelector('.sum');
+  // Blank while the card is open — the rows below already show every value.
+  const setSummary = () => { sum.textContent = card.classList.contains('open') ? '' : summary(sec); };
+
+  // header affordance: a switch for the optional sections, a chevron otherwise
+  let sw = null;
+  if (sec.toggle) {
+    sw = document.createElement('button');
+    sw.className = 'sw' + (S[sec.toggle] ? ' on' : '');
+    sw.setAttribute('aria-label', sec.title);
+    sw.addEventListener('click', (e) => {
+      e.stopPropagation();
+      S[sec.toggle] = !S[sec.toggle];
+      sw.classList.toggle('on', S[sec.toggle]);
+      card.classList.toggle('open', S[sec.toggle]);
+      setSummary();
+      schedule();
+    });
+    head.appendChild(sw);
+  } else {
+    const chev = document.createElement('span');
+    chev.className = 'chev';
+    head.appendChild(chev);
+  }
+
+  head.addEventListener('click', () => {
+    if (sec.toggle && !S[sec.toggle]) return;   // nothing to show while it's off
+    card.classList.toggle('open');
+    setSummary();
+  });
+
+  const rowsByKey = [];
+  sec.fields.forEach((key) => {
+    const [label, min, max, step] = FIELDS[key];
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML =
+      '<label></label>' +
+      '<input type="range" min="' + min + '" max="' + max + '" step="' + step + '">' +
+      '<span class="valbox"></span>';
+    const lab = row.querySelector('label');
+    lab.textContent = label;
+    const input = row.querySelector('input');
+    const box = row.querySelector('.valbox');
+    const sync = () => {
+      input.value = S[key];
+      box.textContent = fmt(key);
+      const pct = ((S[key] - min) / (max - min)) * 100;
+      input.style.backgroundImage =
+        'linear-gradient(90deg,var(--action) 0%,var(--action) ' + pct + '%,var(--track) ' + pct + '%,var(--track) 100%)';
+      setSummary();
+    };
+    input.addEventListener('input', () => { S[key] = parseFloat(input.value); sync(); schedule(); });
+    rows.appendChild(row);
+    rowsByKey.push([key, row, lab]);
+    syncs.push(sync);
+    sync();
+  });
+
+  let palBlock = null;
+  if (sec.palette) palBlock = buildPalette(rows, setSummary);
+  if (sec.output) buildOutput(rows, setSummary);
+
+  // A card whose every control is hidden disappears rather than sitting empty.
+  const applyVis = () => {
+    let live = sec.output === true;
+    title.textContent = titleOf(sec);
+    for (const [key, row, lab] of rowsByKey) {
+      const h = isHidden(key);
+      row.style.display = h ? 'none' : '';
+      lab.textContent = labelOf(key);
+      if (!h) live = true;
+    }
+    if (palBlock) {
+      const h = isHidden('palette');
+      palBlock.style.display = h ? 'none' : '';
+      if (!h) live = true;
+    }
+    card.style.display = live ? '' : 'none';
+  };
+
+  syncs.push(() => {
+    if (sw) { sw.classList.toggle('on', S[sec.toggle]); card.classList.toggle('open', S[sec.toggle]); }
+    applyVis();
+    setSummary();
+  });
+  applyVis();
+  setSummary();
+});
+
+// ---------------------------------------------------------------- palette
+
+function buildPalette(rows, setSummary) {
+  const block = document.createElement('div');
+  block.className = 'palblock';
+  const head = document.createElement('div');
+  head.className = 'palhead';
+  head.innerHTML = '<span class="t">Holo colours</span><span class="n"></span>';
+  const chips = document.createElement('div');
+  chips.className = 'chips';
+  chips.id = 'swatches';
+
+  const autoRow = document.createElement('div');
+  autoRow.innerHTML = '<label class="check"><input type="checkbox" id="holoAuto">Auto spectrum instead</label>';
+  const autoBox = autoRow.querySelector('input');
+
+  block.appendChild(head);
+  block.appendChild(chips);
+  block.appendChild(autoRow);
+  rows.appendChild(block);
+
+  const count = head.querySelector('.n');
+
+  paintPalette = () => {
+    autoBox.checked = S.holoAuto;
+    chips.classList.toggle('auto', S.holoAuto);
+    count.textContent = S.holoColors.length + ' / ' + PAL_MAX;
+    chips.innerHTML = '';
+
+    S.holoColors.forEach((hex, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+
+      const well = document.createElement('div');
+      well.className = 'well';
+      const fill = document.createElement('div');
+      fill.className = 'fillcol';
+      fill.style.background = hex;
+      well.appendChild(fill);
+
+      const pick = document.createElement('input');
+      pick.type = 'color';
+      pick.value = hex;
+      pick.title = 'Holo colour ' + (i + 1);
+      pick.addEventListener('input', () => {
+        S.holoColors[i] = pick.value;
+        fill.style.background = pick.value;
+        label.textContent = pick.value.replace('#', '').toUpperCase();
+        if (S.holoAuto) { S.holoAuto = false; paintPalette(); }   // picking implies manual
+        schedule();
+      });
+      well.appendChild(pick);
+
+      if (S.holoColors.length > 1) {
+        const kill = document.createElement('button');
+        kill.className = 'kill';          // the cross itself is CSS, see .kill
+        kill.title = 'Remove this colour';
+        kill.setAttribute('aria-label', 'Remove ' + hex.replace('#', '').toUpperCase());
+        kill.addEventListener('click', (e) => {
+          e.stopPropagation();
+          S.holoColors.splice(i, 1);
+          paintPalette(); setSummary(); schedule();
+        });
+        well.appendChild(kill);
+      }
+
+      const label = document.createElement('span');
+      label.className = 'hex';
+      label.textContent = hex.replace('#', '').toUpperCase();
+
+      chip.appendChild(well);
+      chip.appendChild(label);
+      chips.appendChild(chip);
+    });
+
+    const add = document.createElement('div');
+    add.className = 'chip add' + (S.holoColors.length >= PAL_MAX ? ' full' : '');
+    add.innerHTML = '<div class="well">+</div><span class="hex">Add</span>';
+    add.addEventListener('click', () => {
+      if (S.holoColors.length >= PAL_MAX) return;
+      const spare = SPARE_PAL.concat(DEFAULT_PAL).find((c) => S.holoColors.indexOf(c) < 0);
+      S.holoColors.push(spare || '#ffffff');
+      S.holoAuto = false;
+      paintPalette(); setSummary(); schedule();
+    });
+    chips.appendChild(add);
+  };
+
+  autoBox.addEventListener('change', () => { S.holoAuto = autoBox.checked; paintPalette(); schedule(); });
+  syncs.push(() => paintPalette());
+  paintPalette();
+  return block;
+}
+
+// ---------------------------------------------------------------- output
+
+function buildOutput(rows, setSummary) {
+  // Size scales the placed sticker on canvas; Resolution is how many pixels
+  // are rendered into it. Effective sharpness is exportScale / outScale, so
+  // the row warns once scaling outruns the render.
+  const sizeRow = document.createElement('div');
+  sizeRow.className = 'row';
+  sizeRow.innerHTML =
+    '<label>Size</label>' +
+    '<input type="range" min="0.25" max="3" step="0.05">' +
+    '<span class="valbox"></span>';
+  const sizeInput = sizeRow.querySelector('input');
+  const sizeBox = sizeRow.querySelector('.valbox');
+  // Kept free of paintOutput so paintOutput can call it without recursing.
+  const syncSize = () => {
+    sizeInput.value = S.outScale;
+    sizeBox.textContent = pct();
+    const p = ((S.outScale - 0.25) / (3 - 0.25)) * 100;
+    sizeInput.style.backgroundImage =
+      'linear-gradient(90deg,var(--action) 0%,var(--action) ' + p + '%,var(--track) ' + p + '%,var(--track) 100%)';
+  };
+  sizeInput.addEventListener('input', () => {
+    S.outScale = parseFloat(sizeInput.value);
+    syncSize(); setSummary(); paintOutput();
+  });
+  rows.appendChild(sizeRow);
+  syncSize();
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = '<label>Resolution</label><div class="segsm"></div>';
+  const seg = row.querySelector('.segsm');
+  [2, 3, 4].forEach((n) => {
+    const b = document.createElement('button');
+    b.textContent = n + 'x';
+    b.dataset.scale = n;
+    b.addEventListener('click', () => {
+      S.exportScale = n;
+      paintOutput(); setSummary();
+      post({ type: 'request-source', scale: S.exportScale, pad: padPx() });
+    });
+    seg.appendChild(b);
+  });
+
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.id = 'scaleNote';
+
+  const keepRow = document.createElement('div');
+  keepRow.innerHTML = '<label class="check"><input type="checkbox" id="keep">Keep the original layer</label>';
+  const keep = keepRow.querySelector('input');
+
+  rows.appendChild(row);
+  rows.appendChild(note);
+  rows.appendChild(keepRow);
+
+  keep.checked = S.keepOriginal;
+  keep.addEventListener('change', () => { S.keepOriginal = keep.checked; setSummary(); });
+
+  paintOutput = () => {
+    [...seg.children].forEach((b) => b.classList.toggle('on', +b.dataset.scale === S.exportScale));
+    keep.checked = S.keepOriginal;
+    syncSize();
+    const density = S.exportScale / S.outScale;
+    note.textContent = density < 1
+      ? 'Soft at this size. Raise Resolution to ' + Math.ceil(S.outScale) + 'x or higher.'
+      : '';
+    note.style.display = note.textContent ? 'block' : 'none';
+  };
+  syncs.push(() => { paintOutput(); });
+  paintOutput();
+}
+
+// ---------------------------------------------------------------- presets
 
 const tabs = $('preset');
 PRESETS.forEach((p, i) => {
@@ -845,59 +1259,17 @@ tabs.addEventListener('click', (e) => {
   if (!b) return;
   [...tabs.children].forEach((x) => x.classList.toggle('on', x === b));
   S.preset = +b.dataset.preset;
-  Object.assign(S, PRESETS[S.preset]);
+  Object.assign(S, PRESETS[S.preset]);   // the palette is deliberately not in PRESETS
   syncs.forEach((f) => f());
   schedule();
 });
 
-function toggle(id, key, groupId) {
-  const el = $(id);
-  el.checked = S[key];
-  el.addEventListener('change', () => {
-    S[key] = el.checked;
-    if (groupId) $(groupId).classList.toggle('collapsed', !el.checked);
-    schedule();
-  });
-  if (groupId) $(groupId).classList.toggle('collapsed', !el.checked);
-}
-toggle('border', 'border', 'g-border');
-toggle('shadow', 'shadow', 'g-shadow');
-toggle('keep', 'keepOriginal');
-
-const autoBox = $('holoAuto');
-const swatchHost = $('swatches');
-function buildSwatches() {
-  swatchHost.innerHTML = '';
-  S.holoColors.slice(0, S.holoN).forEach((hex, i) => {
-    const inp = document.createElement('input');
-    inp.type = 'color';
-    inp.value = hex;
-    inp.title = 'Holo colour ' + (i + 1);
-    inp.addEventListener('input', () => {
-      S.holoColors[i] = inp.value;
-      if (S.holoAuto) { S.holoAuto = false; syncHolo(); }   // picking implies manual
-      schedule();
-    });
-    swatchHost.appendChild(inp);
-  });
-  $('palMinus').disabled = S.holoN <= 1;
-  $('palPlus').disabled = S.holoN >= 4;
-}
-function syncHolo() {
-  autoBox.checked = S.holoAuto;
-  swatchHost.style.opacity = S.holoAuto ? 0.35 : 1;
-  buildSwatches();
-}
-autoBox.addEventListener('change', () => { S.holoAuto = autoBox.checked; syncHolo(); schedule(); });
-$('palPlus').addEventListener('click', () => { S.holoN = Math.min(4, S.holoN + 1); S.holoAuto = false; syncHolo(); schedule(); });
-$('palMinus').addEventListener('click', () => { S.holoN = Math.max(1, S.holoN - 1); syncHolo(); schedule(); });
-syncs.push(syncHolo);
-syncHolo();
-
 $('shuffle').addEventListener('click', () => { S.seed = Math.random() * 97; schedule(); });
-$('res').addEventListener('change', () => {
-  S.exportScale = +$('res').value;
-  post({ type: 'request-source', scale: S.exportScale, pad: padPx() });
+$('reset').addEventListener('click', () => {
+  Object.assign(S, freshState());
+  [...tabs.children].forEach((x, i) => x.classList.toggle('on', i === S.preset));
+  syncs.forEach((f) => f());
+  schedule();
 });
 
 // ---------------------------------------------------------------- rendering
@@ -917,7 +1289,8 @@ function hexRGB(hex) {
 function opts() {
   return Object.assign({}, S, {
     pad: padPx(), exportScale: srcScale,
-    holoPal: S.holoColors.slice(0, S.holoN).map(hexRGB)
+    holoN: S.holoColors.length,
+    holoPal: S.holoColors.map(hexRGB)
   });
 }
 
@@ -965,6 +1338,8 @@ function toU8(v) {
   return new Uint8Array(Object.keys(v).map((k) => v[k]));
 }
 
+const CREDIT = 'Vibe Coded by <a href="https://rikkijanae.com" target="_blank" rel="noopener">Rikki Janae</a>';
+function setMeta(text) { $('meta').innerHTML = text ? text : CREDIT; }
 function showError(m) { const e = $('err'); e.textContent = m; e.style.display = 'block'; }
 function clearError() { $('err').style.display = 'none'; }
 
@@ -980,7 +1355,7 @@ $('apply').addEventListener('click', () => {
   if (!renderer) return;
   batch = { i: 0, total: 1 };
   $('apply').disabled = true;
-  $('meta').textContent = 'Rendering…';
+  setMeta('Rendering…');
   post({ type: 'request-batch', index: 0, scale: S.exportScale, pad: padPx() });
 });
 
@@ -994,7 +1369,7 @@ onmessage = async (event) => {
     $('hint').style.display = 'block';
     $('hint').textContent = 'Select a layer on the canvas';
     $('apply').disabled = true;
-    $('meta').textContent = '';
+    setMeta('');
     return;
   }
 
@@ -1012,17 +1387,15 @@ onmessage = async (event) => {
     clearError();
     await loadSource(msg);
     $('apply').disabled = false;
-    $('meta').textContent = msg.count > 1 ? msg.count + ' layers selected' : msg.name;
-    if (msg.scale < msg.requestedScale) {
-      $('meta').textContent += ' · capped to ' + msg.scale + 'x';
-    }
+    // The credit line stays put; only transient status replaces it.
+    setMeta(msg.scale < msg.requestedScale ? 'Capped to ' + msg.scale + 'x' : '');
     schedule();
     return;
   }
 
   if (msg.type === 'batch-source') {
     batch = { i: msg.index, total: msg.total };
-    $('meta').textContent = 'Rendering ' + (msg.index + 1) + '/' + msg.total + '…';
+    setMeta('Rendering ' + (msg.index + 1) + '/' + msg.total + '…');
     await loadSource(msg);
     const o = opts();
     const r = renderer.render(o, 1);
@@ -1034,6 +1407,7 @@ onmessage = async (event) => {
       scale: r.scale,
       pad: r.padOut,
       keepOriginal: S.keepOriginal,
+      outScale: S.outScale,
       index: msg.index,
       total: msg.total
     });
@@ -1048,7 +1422,8 @@ onmessage = async (event) => {
   if (msg.type === 'done') {
     batch = null;
     $('apply').disabled = false;
-    $('meta').textContent = 'Done';
+    setMeta('Done');
+    setTimeout(() => { if (!batch) setMeta(''); }, 1600);
     // The new image is now selected, which triggers a fresh preview.
     return;
   }
@@ -1056,6 +1431,7 @@ onmessage = async (event) => {
   if (msg.type === 'error') showError(msg.message);
 };
 
+setMeta('');
 post({ type: 'ready', scale: S.exportScale, pad: padPx() });
 
 </script>

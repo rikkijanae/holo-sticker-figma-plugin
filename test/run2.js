@@ -3,7 +3,8 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const PRESETS = {
   tinted:  { mode:0, intensity:1.15, tint:1.0, holoMix:0.25, colorVary:0.55, spread:1.0,  jitter:0.42, vary:0.18, sparkle:0.5,  angle:35, gloss:0.5,  borderW:7, borderHolo:0.28 },
-  rainbow: { mode:0, intensity:1.3,  tint:0.0, holoMix:0.0,  colorVary:0.0, spread:1.0,  jitter:0.42, vary:0.18, sparkle:0.75, angle:35, gloss:0.55, borderW:7, borderHolo:0.28 },
+  // not a tab any more: this is Tinted + Auto spectrum + Object tint 0
+  spectrum: { mode:0, intensity:1.3,  tint:0.0, holoMix:0.0,  colorVary:0.0, spread:1.0,  jitter:0.42, vary:0.18, sparkle:0.75, angle:35, gloss:0.55, borderW:7, borderHolo:0.28 },
   glitter: { mode:1, intensity:0.9,  tint:0.0, holoMix:0.0,  colorVary:0.45, spread:1.35, jitter:0.72, vary:0.4,  sparkle:0.85, angle:35, gloss:0.45, borderW:6, borderHolo:0.6 },
   foil:    { mode:2, intensity:0.8,  tint:0.0, holoMix:0.0,  colorVary:0.0, spread:1.1,  jitter:0.42, vary:0.18, sparkle:0.5,  angle:50, gloss:0.7,  borderW:8, borderHolo:0.15 }
 };

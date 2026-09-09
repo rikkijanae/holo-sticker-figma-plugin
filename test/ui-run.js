@@ -49,30 +49,163 @@ const fs = require('fs');
   }));
   console.log('UI state:', JSON.stringify(state));
 
-  // Exercise a preset switch + slider drag + apply.
+  // Exercise a preset switch + shuffle + apply.
   await page.click('#preset button[data-preset="1"]');
   await page.waitForTimeout(400);
   await page.click('#shuffle');
   await page.waitForTimeout(400);
   await page.click('#preset button[data-preset="0"]');
   await page.waitForTimeout(300);
+
+  const defaults = await page.evaluate(() =>
+    [...document.querySelectorAll('#swatches .chip:not(.add) .hex')].map(e => e.textContent));
+  console.log('default palette:', JSON.stringify(defaults));
+
   // turn Auto on, then pick a colour — picking must switch it back off
   await page.click('#holoAuto');
   await page.waitForTimeout(200);
   await page.evaluate(() => {
-    const sw = document.querySelector('#swatches input');
+    const sw = document.querySelector('#swatches input[type=color]');
     sw.value = '#ffd76a';
     sw.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await page.waitForTimeout(400);
-  const autoOff = await page.evaluate(() => !document.getElementById('holoAuto').checked);
-  console.log('picking a colour switched Auto off:', autoOff);
-  await page.click('#palPlus');
+  console.log('picking a colour switched Auto off:',
+    await page.evaluate(() => !document.getElementById('holoAuto').checked));
+
+  // Add up to the shader's six-colour max, then confirm the slot locks off.
+  const before = await page.evaluate(() => document.querySelectorAll('#swatches .chip:not(.add)').length);
+  await page.click('#swatches .chip.add');
+  await page.waitForTimeout(250);
+  await page.click('#swatches .chip.add');
+  await page.waitForTimeout(250);
+  const atMax = await page.evaluate(() => ({
+    swatches: document.querySelectorAll('#swatches .chip:not(.add)').length,
+    count: document.querySelector('.palhead .n').textContent,
+    addLocked: document.querySelector('#swatches .chip.add').classList.contains('full')
+  }));
+  console.log('from', before, 'to max:', JSON.stringify(atMax));
+
+  // Remove two with the per-swatch badge.
+  await page.click('#swatches .chip:not(.add) .kill');
   await page.waitForTimeout(200);
-  const n = await page.evaluate(() => document.querySelectorAll('#swatches input').length);
-  console.log('swatches after +:', n);
-  await page.click('#shadow');
+  await page.click('#swatches .chip:not(.add) .kill');
+  await page.waitForTimeout(250);
+  console.log('after two removes:', await page.evaluate(() => ({
+    swatches: document.querySelectorAll('#swatches .chip:not(.add)').length,
+    count: document.querySelector('.palhead .n').textContent,
+    addLocked: document.querySelector('#swatches .chip.add').classList.contains('full')
+  })));
+
+  // Sections collapse to a header carrying a value summary.
+  console.log('summaries:', await page.evaluate(() =>
+    [...document.querySelectorAll('.sec')].map(c =>
+      c.querySelector('.t').textContent + ' = "' + c.querySelector('.sum').textContent + '"' +
+      (c.classList.contains('open') ? ' [open]' : ''))));
+
+  // Texture expands, and its header summary blanks while it is open.
+  await page.click('.sec:nth-child(2) .shead');
+  await page.waitForTimeout(150);
+  console.log('Texture open + summary blank:', await page.evaluate(() => {
+    const c = document.querySelectorAll('.sec')[1];
+    return c.classList.contains('open') && c.querySelector('.sum').textContent === '';
+  }));
+  await page.click('.sec:nth-child(2) .shead');
+  await page.waitForTimeout(150);
+  console.log('Texture shut + summary back:', await page.evaluate(() => {
+    const c = document.querySelectorAll('.sec')[1];
+    return !c.classList.contains('open') && c.querySelector('.sum').textContent === '1.0 \u00b7 1.0 \u00b7 1.0 \u00b7 0.42';
+  }));
+  await page.click('.sec:nth-child(2) .shead');
+  await page.waitForTimeout(150);
+
+  // Drop shadow: the switch turns it on and expands it in one go.
+  await page.click('.sec:nth-child(5) .sw');
   await page.waitForTimeout(400);
+  console.log('shadow on + expanded:', await page.evaluate(() => {
+    const c = document.querySelectorAll('.sec')[4];
+    return c.classList.contains('open') && c.querySelector('.sw').classList.contains('on');
+  }));
+
+  // Output: resolution is a segmented control now.
+  await page.click('.sec:nth-child(6) .shead');
+  await page.waitForTimeout(150);
+  await page.click('.segsm button[data-scale="4"]');
+  await page.waitForTimeout(200);
+
+  // Size scales the placed sticker; the note warns when it outruns Resolution.
+  await page.evaluate(() => {
+    const s = document.querySelectorAll('.sec')[5].querySelector('input[type=range]');
+    s.value = '2.5'; s.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(150);
+  console.log('size 250% @4x:', await page.evaluate(() => ({
+    box: document.querySelectorAll('.sec')[5].querySelector('.valbox').textContent,
+    note: document.getElementById('scaleNote').textContent
+  })));
+  await page.evaluate(() => {
+    const s = document.querySelectorAll('.sec')[5].querySelector('input[type=range]');
+    s.value = '0.5'; s.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(150);
+  console.log('size 50% @4x:', await page.evaluate(() => ({
+    box: document.querySelectorAll('.sec')[5].querySelector('.valbox').textContent,
+    note: document.getElementById('scaleNote').textContent
+  })));
+
+  // At 2x, scaling past 200% outruns the render and the note must appear.
+  await page.click('.segsm button[data-scale="2"]');
+  await page.evaluate(() => {
+    const s = document.querySelectorAll('.sec')[5].querySelector('input[type=range]');
+    s.value = '3'; s.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(150);
+  console.log('size 300% @2x:', await page.evaluate(() => document.getElementById('scaleNote').textContent));
+  await page.click('.segsm button[data-scale="4"]');
+  await page.evaluate(() => {
+    const s = document.querySelectorAll('.sec')[5].querySelector('input[type=range]');
+    s.value = '0.5'; s.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(150);
+
+  await page.click('.sec:nth-child(6) .shead');   // shut it so the summary shows
+  await page.waitForTimeout(150);
+  console.log('output summary:', await page.evaluate(() =>
+    document.querySelectorAll('.sec')[5].querySelector('.sum').textContent));
+  await page.click('.sec:nth-child(6) .shead');
+  await page.waitForTimeout(150);
+
+  // Foil is drawn by foil(), so the whole disc-mosaic half of the panel goes
+  // away and the remaining labels switch to foil vocabulary.
+  await page.click('#preset button[data-preset="2"]');
+  await page.waitForTimeout(600);
+  await page.evaluate(() => document.querySelectorAll('.sec').forEach(c => {
+    if (c.style.display !== 'none' && !c.classList.contains('open')) c.querySelector('.shead').click();
+  }));
+  await page.waitForTimeout(200);
+  console.log('foil panel:', await page.evaluate(() =>
+    [...document.querySelectorAll('.sec')].filter(c => c.style.display !== 'none').map(c =>
+      c.querySelector('.t').textContent + ': ' +
+      [...c.querySelectorAll('.row')].filter(r => r.style.display !== 'none')
+        .map(r => r.querySelector('label').textContent).join(', '))));
+  console.log('foil hides the palette:', await page.evaluate(() =>
+    getComputedStyle(document.querySelector('.palblock')).display === 'none'));
+  await page.click('#preset button[data-preset="0"]');
+  await page.waitForTimeout(600);
+  console.log('back on Tinted, flake controls return:', await page.evaluate(() =>
+    getComputedStyle(document.querySelector('.palblock')).display !== 'none' &&
+    [...document.querySelectorAll('.sec')[0].querySelectorAll('.row')]
+      .every(r => r.style.display !== 'none')));
+
+  // Reset puts the defaults back, palette included.
+  await page.click('#reset');
+  await page.waitForTimeout(400);
+  console.log('after reset:', await page.evaluate(() => ({
+    palette: [...document.querySelectorAll('#swatches .chip:not(.add) .hex')].map(e => e.textContent),
+    shimmer: document.querySelector('.sec .valbox').textContent,
+    size: document.querySelectorAll('.sec')[5].querySelector('.valbox').textContent
+  })));
+
   await page.click('#apply');
   await page.waitForTimeout(300);
   await page.screenshot({ path: __dirname + '/ui.png', fullPage: true });

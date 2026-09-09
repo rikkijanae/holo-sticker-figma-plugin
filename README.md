@@ -16,30 +16,34 @@ are yours to colour.
 1. Download or clone this repo.
 2. Figma **desktop app** → menu → **Plugins → Development → Import plugin from manifest…**
 3. Pick `manifest.json` from the folder.
-4. Select a layer, then **Plugins → Development → Shiny Sticker by Rikki Janae**.
+4. Select a layer, then **Plugins → Development → Shiny Sticker**.
 
-No build step needed to run it — `ui.html` is committed pre-built.
+No build step needed to run it. `ui.html` is committed pre-built.
+
+The panel is light only, on the true-neutral grey ramp from the Shiny Sticker
+Figma file (`grey/*` primitives, `color/panel/*` semantics). Its CSS custom
+properties map one-to-one onto those tokens.
 
 ## Presets
 
 | | |
 |---|---|
-| **Tinted** | Confetti discs that take their colour from the artwork underneath, with a scattering of iridescent/silver flakes between — the Sandylion sticker-sheet look. |
+| **Tinted** | Confetti discs that take their colour from the artwork underneath, with a scattering of rainbow/silver flakes between — the Sandylion sticker-sheet look. |
 | **Glitter** | Dense fine grain, like glitter cardstock. |
 | **Foil** | No particles — flowing oil-slick film. |
 
-All three are just starting points for the same shader — the sliders move freely between them.
+All four are just starting points for the same shader — the sliders move freely between them.
 
 ## Controls
 
 - **Shimmer** — overall strength of the holo layer.
 - **Object tint** — 0 = every flake is full spectrum; 1 = each flake takes the colour of the artwork under its centre and stays at that lightness. A black sticker stays black, a pink one stays pink.
 - **Colour vary** — how far each flake's hue and saturation drift from the object's own colour. A pink sticker at 0 is one flat pink; at 0.55 you get magenta, coral and pale-pink flakes mixed through it.
-- **Holo flakes** — what fraction of the flakes are iridescent flashes rather than object-coloured. They're recoloured at the artwork's own lightness, so they read as holo film catching the light, not as coloured confetti dropped on top.
-- **Holo colours** — a palette of up to four colours for the flash flakes; each flake picks one at random. The default is silver / sky blue / mint, which is what most of the reference sheets use. **+ / −** add and remove swatches. Tick **Auto spectrum instead** to let them run through the spectrum; touching a swatch unticks it for you. The palette survives preset switches. A hand-picked colour composites nearly opaque so it survives being laid over saturated artwork, and skips the dark-ink desaturation that Auto applies.
+- **Holo flakes** — what fraction of the flakes are iridescent flashes rather than object-coloured. They're recoloured at the artwork's own lightness, so they read as holo film catching the light, not as rainbow confetti dropped on top.
+- **Holo colours** — a palette of up to six colours for the flash flakes; each flake picks one at random. The default is lime, yellow, cyan and magenta, which is what real holographic film actually flashes. The **×** on a swatch removes it and the dashed **+** adds one, up to six. Tick **Auto spectrum instead** to let them run through the rainbow; touching a swatch unticks it for you. Auto spectrum with **Object tint** at 0 gives you full-spectrum confetti that ignores the artwork's colour. The palette survives preset switches. A hand-picked colour composites nearly opaque so it survives being laid over saturated artwork, and skips the dark-ink desaturation that Auto applies.
 - **Holo lift** — how much brighter the flash flakes are allowed to be than the artwork. Push this up to make gold or silver pop on a dark sticker; pull it down to keep everything flush.
 - **Flake size** — scales the discs (in design px, so it's resolution-independent). The discs overlap into a full mosaic with no gaps, like the reference sheets; this only changes how many there are.
-- **Hue spread** — how much of the spectrum the flakes span. Low = tonal, high = full spectrum.
+- **Hue spread** — how much of the spectrum the flakes span. Low = tonal, high = full rainbow. Only shown on Glitter, where the flakes are spectrum-coloured; on Tinted the artwork's own colour replaces it, so it is hidden.
 - **Scatter** — how far each flake is jittered off its grid cell. Low = evenly packed confetti (the reference sheets), high = loose and clumpy.
 - **Sparkle** — the white specular pops on individual flakes.
 - **Light angle** — direction the light sweeps from; each flake shades from that side.

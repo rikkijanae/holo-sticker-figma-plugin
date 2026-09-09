@@ -86,6 +86,8 @@ uniform vec3  uHoloPal0;
 uniform vec3  uHoloPal1;
 uniform vec3  uHoloPal2;
 uniform vec3  uHoloPal3;
+uniform vec3  uHoloPal4;
+uniform vec3  uHoloPal5;
 uniform float uColorVary;
 uniform float uJitter;
 uniform float uCover;
@@ -145,6 +147,8 @@ vec3 pickPal(float r){
   if (k > 1.0) c = uHoloPal1;
   if (k > 2.0) c = uHoloPal2;
   if (k > 3.0) c = uHoloPal3;
+  if (k > 4.0) c = uHoloPal4;
+  if (k > 5.0) c = uHoloPal5;
   return c;
 }
 
@@ -312,13 +316,45 @@ void main(){
       fl2 = flakes(pd,  2.1 * uFlakeScale, 0.44, 0.62, 0.66, 31.7, uTint, src.rgb, sp2, hc2);
     } else {                                // prismatic foil
       fl  = foil(pd, sp1);
+      // Object tint is hidden on the Foil tab (Rikki, 2026-09-09) and the Foil
+      // preset pins uTint to 0, so this branch is unreachable from the panel.
+      // Kept because it is correct and one line in HIDDEN brings it back.
       if (uTint > 0.001) {
-        float fLum = dot(fl.rgb, LUMA);
-        float oLum = dot(src.rgb, LUMA);
-        vec3 tf = clamp(mix(vec3(oLum), src.rgb, 1.4) * (0.45 + 1.15 * fLum), 0.0, 1.0);
-        fl.rgb = mix(fl.rgb, mix(tf, fl.rgb, 0.18), uTint);
+        // Tint must COLOUR the foil, not erase it. The old version keyed off
+        // the foil's luminance, which pal() keeps nearly flat — the swirl lives
+        // in the hue — so tinting collapsed to a flat wash of the artwork.
+        // Instead: keep the foil's light/dark as a modulation of the artwork's
+        // own lightness (same luminance matching the flake path uses, so a
+        // black sticker stays black), take hue and saturation from the artwork,
+        // and leave a narrow hue swing so it still reads as iridescent.
+        vec3  oh = rgb2hsv(src.rgb);
+        vec3  fh = rgb2hsv(fl.rgb);
+        float ol = dot(src.rgb, LUMA);
+        float f  = fh.z;
+
+        // Lightness is ALWAYS matched to the artwork, whatever the hue does —
+        // that is what keeps a black sticker black. Do not let the hue blend
+        // below feed back into L, or neutrals bleach out (the old chroma-gate
+        // bug in the flake path).
+        float L = clamp(ol * (0.55 + 0.9 * f) + (1.0 - ol) * 0.28 * f * f, 0.0, 1.0);
+
+        // A coloured artwork lends its own hue; a neutral one (black, white,
+        // grey) has no hue to lend, so the foil keeps a muted version of its
+        // own. Black holo foil is dark AND iridescent, not flat black.
+        float w = clamp(oh.y * 2.2, 0.0, 1.0);
+        float hue = mix(fh.x, fract(oh.x + (fh.x - 0.5) * 0.16), w);
+        float sat = mix(fh.y * 0.55, oh.y * (0.85 + 0.30 * f), w);
+
+        vec3 tf = hsv2rgb(vec3(hue, clamp(sat, 0.0, 1.0), L));
+        fl.rgb = mix(fl.rgb, tf, uTint);
       }
     }
+
+    // Keep the mosaic off the artwork's antialiased rim. Without this the
+    // flakes are laid at full strength on half-transparent edge pixels, which
+    // then composite over the die-cut and read as colour leaking past it.
+    // Genuinely translucent artwork (a 50%-opacity layer) still gets ~0.9.
+    float core = smoothstep(0.06, 0.62, src.a);
 
     vec3 art = mix(src.rgb, src.rgb * 0.9 + 0.07, 0.3);   // gentle plastic lift
 
@@ -329,9 +365,14 @@ void main(){
 
     // the mosaic. Shimmer scales how solidly it covers the ink.
     float solidity = mix(0.75, 0.30, uHoloAuto);
-    float a1 = clamp(fl.a * uIntensity * 0.78, 0.0, 1.0);
-    art = mix(art, layFlake(art, fl.rgb, hc1 * solidity), a1);
-    float a2 = clamp(fl2.a * uIntensity * 0.6, 0.0, 1.0);
+    // Foil composites straight in proportion to tint. layFlake at solid = 0 is
+    // essentially hard-light, and hard-light can never lift a black base, so a
+    // black sticker showed no tinted foil at all. The tinted colour is already
+    // luminance-matched, so laying it straight is both correct and visible.
+    float solid1 = (uMode == 2) ? uTint * 0.92 : hc1 * solidity;
+    float a1 = clamp(fl.a * uIntensity * 0.78, 0.0, 1.0) * core;
+    art = mix(art, layFlake(art, fl.rgb, solid1), a1);
+    float a2 = clamp(fl2.a * uIntensity * 0.6, 0.0, 1.0) * core;
     art = mix(art, layFlake(art, fl2.rgb, hc2 * solidity), a2);
 
     // flakes catch the most light where the ink is dark (rainbow mode only)
@@ -354,7 +395,7 @@ void main(){
       if (uBorderHolo > 0.002){
         float bsp = 0.0, bhc = 0.0;
         vec4 bf = flakes(pd, 7.0 * uFlakeScale, 0.62, 0.76, 0.85, 5.3, 0.0, vec3(0.9), bsp, bhc);
-        vec3 bfc = mix(vec3(dot(bf.rgb, vec3(0.333))), bf.rgb, 0.6);
+        vec3 bfc = mix(vec3(dot(bf.rgb, vec3(0.333))), bf.rgb, 0.16);
         vec3 silver = layFlake(vec3(0.9), mix(vec3(0.88), bfc, bf.a * 0.5), 0.0);
         bcol = mix(bcol, clamp(silver + bsp * 0.4, 0.0, 1.0), uBorderHolo);
       }
@@ -514,7 +555,7 @@ class HoloRenderer {
     gl.uniform1f(u('uHoloLift'), o.holoLift);
     const pal = o.holoPal && o.holoPal.length ? o.holoPal : [[0.93, 0.92, 0.96]];
     gl.uniform1f(u('uHoloN'), pal.length);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       const c = pal[Math.min(i, pal.length - 1)];
       gl.uniform3f(u('uHoloPal' + i), c[0], c[1], c[2]);
     }
